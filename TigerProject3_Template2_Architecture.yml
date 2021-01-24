@@ -1,0 +1,240 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Metadata:
+ License: Apache-2.0
+Description: This template will create a VPC, 2 public subnets, 2 private subnets in 
+  2 differents availability zone, route tables, NAT gateway, internet gateway.
+
+Parameters:
+  Africanfinancialvpcidr:
+    Description: The VPC cidr of African Financial group
+    Type: String
+    Default: 172.16.0.0/16
+
+  AfricanfinancialPublicsubnet1cidr:
+    Description: The Public subnet 1 cidr of African Financial group
+    Type: String
+    Default: 172.16.2.0/24
+
+  AfricanfinancialPublicsubnet2cidr:
+    Description: The Public subnet 2 cidr of African Financial group
+    Type: String
+    Default: 172.16.4.0/24
+
+  AfricanfinancialPrivatesubnet1cidr:
+    Description: The Private subnet 1 cidr of African Financial group
+    Type: String
+    Default: 172.16.1.0/24
+
+  AfricanfinancialPrivatesubnet2cidr:
+    Description: The Private subnet 2 cidr of African Financial group
+    Type: String
+    Default: 172.16.3.0/24
+ 
+  OtherAWSaccountID:
+    Description: Another aws account id for a peering connection
+    Type: String
+    Default: 109367407331
+  AfricanfinancialAWSaccountID:
+    Description: Africanfinancial aws account id 
+    Type: String
+    Default: 258972849027
+
+Resources:
+  #VPC
+  AfricanfinancialVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref Africanfinancialvpcidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: AfricanfinancialVPCn 
+
+  # Internet gateway
+  AfricanfinancialIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: AfricanfinancialIGWn
+  
+  AfricanfinancialIGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref AfricanfinancialIGW
+      VpcId: !Ref AfricanfinancialVPC
+
+ # Public Subnet 1  
+  AfricanfinancialPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref AfricanfinancialVPC
+      CidrBlock: !Ref AfricanfinancialPublicsubnet1cidr
+      AvailabilityZone: !Select 
+        - 0
+        - !GetAZs 
+          Ref: 'AWS::Region' 
+      Tags:
+        - Key: Name
+          Value: AfricanfinancialPublicSubnet1n
+
+   # Public Subnet 2  
+  AfricanfinancialPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref AfricanfinancialVPC
+      CidrBlock: !Ref AfricanfinancialPublicsubnet2cidr
+      AvailabilityZone: !Select 
+        - 1
+        - !GetAZs 
+          Ref: 'AWS::Region' 
+      Tags:
+        - Key: Name
+          Value: AfricanfinancialPublicSubnet2n
+
+  # Private Subnet 1
+  AfricanfinancialPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref AfricanfinancialVPC
+      CidrBlock: !Ref AfricanfinancialPrivatesubnet1cidr
+      AvailabilityZone: !Select 
+        - 0
+        - !GetAZs 
+          Ref: 'AWS::Region' 
+      Tags:
+        - Key: Name
+          Value: AfricanfinancialPrivateSubnet1n
+
+    # Private Subnet 2
+  AfricanfinancialPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref AfricanfinancialVPC
+      CidrBlock: !Ref AfricanfinancialPrivatesubnet2cidr
+      AvailabilityZone: !Select 
+        - 1
+        - !GetAZs 
+          Ref: 'AWS::Region' 
+      Tags:
+        - Key: Name
+          Value: AfricanfinancialPrivateSubnet2n
+
+  # public Route table
+  AfricanfinancialPublicRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref AfricanfinancialVPC
+      Tags:
+        - Key: Name
+          Value: AfricanfinancialPublicRTn
+
+  #adding the public route to the route table
+  AfricanfinancialPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AfricanfinancialIGWattachment
+    Properties:
+      RouteTableId: !Ref AfricanfinancialPublicRT
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref   AfricanfinancialIGW
+  
+  # nat gateway iep
+  AfricanfinancialNatGWeip:
+    Type: AWS::EC2::EIP
+    Properties: 
+      Domain: vpc
+      Tags: 
+        - Key: name
+          Value: AfricanfinancialNatGWeipn
+
+  AfricanfinancialNatGW:
+    Type: AWS::EC2::NatGateway
+    DependsOn: AfricanfinancialNatGWeip
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - AfricanfinancialNatGWeip
+        - AllocationId
+      SubnetId:
+        Ref: AfricanfinancialPublicSubnet1
+
+  # Private Route table
+  AfricanfinancialPrivateRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref AfricanfinancialVPC
+      Tags:
+        - Key: Name
+          Value: AfricanfinancialPrivateRTn
+  
+   # Private Route table with NAT gateway association
+  AfricanfinancialPrivateRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AfricanfinancialNatGW
+    Properties:
+      RouteTableId: !Ref AfricanfinancialPrivateRT
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref AfricanfinancialNatGW
+
+  # Public subnet 1 route table association
+  AfricanfinancialPublicSubnet1RTAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref AfricanfinancialPublicSubnet1
+      RouteTableId: !Ref AfricanfinancialPublicRT
+
+    # Public subnet 2 route table association
+  AfricanfinancialPublicSubnet2RTAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref AfricanfinancialPublicSubnet2
+      RouteTableId: !Ref AfricanfinancialPublicRT
+  
+  # Private subnet 1 route table association
+  AfricanfinancialPrivateSubne1tRTAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref AfricanfinancialPrivateSubnet1
+      RouteTableId: !Ref AfricanfinancialPrivateRT
+
+    # Private subnet 2 route table association
+  AfricanfinancialPrivateSubne2tRTAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref AfricanfinancialPrivateSubnet2
+      RouteTableId: !Ref AfricanfinancialPrivateRT
+
+  # peering connection missing
+
+
+Outputs:
+  AfricanfinancialvpcID:
+    Description: VPC ID
+    Value: !Ref AfricanfinancialVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCID'
+  AfricanfinancialPublicSubnet1ID:
+    Description: The subnet ID to use for public web servers
+    Value: !Ref AfricanfinancialPublicSubnet1
+    Export:
+      Name: !Sub '${AWS::StackName}-PubSubnet1ID'
+
+  AfricanfinancialPublicSubnet2ID:
+    Description: The subnet ID to use for public web servers
+    Value: !Ref AfricanfinancialPublicSubnet2
+    Export:
+      Name: !Sub '${AWS::StackName}-PubSubnet2ID'
+
+  AfricanfinancialPrivateSubnet1ID:
+    Description: The subnet ID to use for private web servers
+    Value: !Ref AfricanfinancialPrivateSubnet1
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivSubnet1ID'
+
+  AfricanfinancialPrivateSubnet2ID:
+    Description: The subnet ID to use for private web servers
+    Value: !Ref AfricanfinancialPrivateSubnet2
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivSubnet2ID'
