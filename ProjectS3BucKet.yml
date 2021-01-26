@@ -4,7 +4,7 @@ Resources:
   AfricanfinancialS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: africanfinancialtiger
+      BucketName: tiger.cloudspaceconsulting.com
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
