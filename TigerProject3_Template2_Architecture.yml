@@ -30,15 +30,30 @@ Parameters:
     Description: The Private subnet 2 cidr of African Financial group
     Type: String
     Default: 172.16.3.0/24
- 
-  OtherAWSaccountID:
-    Description: Another aws account id for a peering connection
-    Type: String
-    Default: 109367407331
-  AfricanfinancialAWSaccountID:
+
+  RequesterVPCAccountID:
     Description: Africanfinancial aws account id 
     Type: String
-    Default: 258972849027
+    Default: 258972849027 
+
+  PeerVPCAccountCidr:
+    Description: The VPC cidr of the peer account
+    Type: String
+    Default: 192.168.0.0/16
+  
+  PeerVPCAccountID:
+    Description: Another aws account id for a peering connection
+    Type: String
+    Default: 899624289050
+
+  PeerVPCId:
+    Description: The vpc id of the peer account
+    Type: String
+    Default: vpc-0dab893be8308fd9f
+  
+  PeerRoleArn:
+    Description: The arn of the peer role created in the accepter account
+    Type: String 
 
 Resources:
   #VPC
@@ -140,25 +155,26 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref   AfricanfinancialIGW
   
-  # nat gateway iep
-  AfricanfinancialNatGWeip:
-    Type: AWS::EC2::EIP
-    Properties: 
-      Domain: vpc
-      Tags: 
-        - Key: name
-          Value: AfricanfinancialNatGWeipn
+  # # nat gateway iep
+  # AfricanfinancialNatGWeip:
+  #   Type: AWS::EC2::EIP
+  #   Properties: 
+  #     Domain: vpc
+  #     Tags: 
+  #       - Key: name
+  #         Value: AfricanfinancialNatGWeipn
 
-  AfricanfinancialNatGW:
-    Type: AWS::EC2::NatGateway
-    DependsOn: AfricanfinancialNatGWeip
-    Properties:
-      AllocationId:
-        Fn::GetAtt:
-        - AfricanfinancialNatGWeip
-        - AllocationId
-      SubnetId:
-        Ref: AfricanfinancialPublicSubnet1
+  # # NAT Gateway
+  # AfricanfinancialNatGW:
+  #   Type: AWS::EC2::NatGateway
+  #   DependsOn: AfricanfinancialNatGWeip
+  #   Properties:
+  #     AllocationId:
+  #       Fn::GetAtt:
+  #       - AfricanfinancialNatGWeip
+  #       - AllocationId
+  #     SubnetId:
+  #       Ref: AfricanfinancialPublicSubnet1
 
   # Private Route table
   AfricanfinancialPrivateRT:
@@ -169,14 +185,23 @@ Resources:
         - Key: Name
           Value: AfricanfinancialPrivateRTn
   
-   # Private Route table with NAT gateway association
-  AfricanfinancialPrivateRoute:
-    Type: AWS::EC2::Route
-    DependsOn: AfricanfinancialNatGW
-    Properties:
-      RouteTableId: !Ref AfricanfinancialPrivateRT
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref AfricanfinancialNatGW
+  # # Private Route table with NAT gateway association 
+  # AfricanfinancialPrivateRoute:
+  #   Type: AWS::EC2::Route
+  #   DependsOn: AfricanfinancialNatGW
+  #   Properties:
+  #     RouteTableId: !Ref AfricanfinancialPrivateRT
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     NatGatewayId: !Ref AfricanfinancialNatGW
+
+  # # Private Route table with peering connection association 
+  # AfricanfinancialPrivateRoutePeering:
+  #   Type: AWS::EC2::Route
+  #   DependsOn: AfricanfinancialNatGW
+  #   Properties:
+  #     RouteTableId: !Ref AfricanfinancialPrivateRT
+  #     DestinationCidrBlock: !Ref PeerVPCAccountCidr
+  #     VpcPeeringConnectionId: !Ref vpcPeeringConnection
 
   # Public subnet 1 route table association
   AfricanfinancialPublicSubnet1RTAssociation:
@@ -185,7 +210,7 @@ Resources:
       SubnetId: !Ref AfricanfinancialPublicSubnet1
       RouteTableId: !Ref AfricanfinancialPublicRT
 
-    # Public subnet 2 route table association
+  # Public subnet 2 route table association
   AfricanfinancialPublicSubnet2RTAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
@@ -199,14 +224,25 @@ Resources:
       SubnetId: !Ref AfricanfinancialPrivateSubnet1
       RouteTableId: !Ref AfricanfinancialPrivateRT
 
-    # Private subnet 2 route table association
+  # Private subnet 2 route table association
   AfricanfinancialPrivateSubne2tRTAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref AfricanfinancialPrivateSubnet2
       RouteTableId: !Ref AfricanfinancialPrivateRT
 
-  # peering connection missing
+  # # VPC peering connection 
+  # vpcPeeringConnection:
+  #   Type: 'AWS::EC2::VPCPeeringConnection'
+  #   Properties: 
+  #     VpcId: !Ref AfricanfinancialVPC
+  #     PeerOwnerId: !Ref PeerVPCAccountID
+  #     PeerRegion: us-east-1
+  #     PeerRoleArn:  !Ref PeerRoleArn
+  #     PeerVpcId: !Ref PeerVPCId
+  #     Tags: 
+  #       - Key : name
+  #         Value: AfricanFinancialVpcPeeringConnetion
 
 
 Outputs:

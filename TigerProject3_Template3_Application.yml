@@ -1,12 +1,518 @@
----
 AWSTemplateFormatVersion: '2010-09-09'
-Metadata:
- License: Apache-2.0
-Description: 'AWS CloudFormation Sample Template IAM_Users_Groups_and_Policies: Sample
-  template showing how to create IAM users, groups and policies. It creates a single'
+Description: >-
+  AWS CloudFormation Sample Template IAM_Users_Groups_and_Policies: Sample
+  template showing how to create IAM users, groups and policies. It creates a single
 
 Parameters:
+  # The name of an existing key pair
+  AfricanFinancialKeyPairName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  
+  # Instance type
+  AfricnanFinancialInstanceType:
+    Description: The type of EC2 instance to launch
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+      - t2.nano
+    ConstraintDescription: the type must be a valid EC2 type
+  
+  # The DB class to use
+  AfricanFinancialDbClass:
+    Description: the class on the rds db to launch
+    Type: String
+    Default: db.t2.micro
+    AllowedValues:
+      - bd.t1.micro
+      - db.t1.small
+      - db.t2.micro
+      - db.t2.small
+    ConstraintDescription: Must be a valid class
+ 
+  # Public DB name
+  AfricanFinancialPublicDBName:
+    Description: the wordpress data base name of the public website
+    Type: String
+    Default: AfricanFinancialPublicDB
+
+  # Private DB name
+  DBName:
+    Default: AfricanFinancialPrivateDB
+    Description: The WordPress database name
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  
+  # DB admin user
+  AfricanFinancialPublicDbAdminUser:
+    Description: The user name of the wordpress admin account for the public website
+    Type: String
+    Default: admin
+  
+  # DB admin user password
+  AfricanFinancialPublicDbAdminPassword:
+    Description: The password of the wordpress admin
+    NoEcho: 'true'
+    Type: String
+    MinLength: '8'
+    MaxLength: '20'
+    ConstraintDescription: must contain Alpha numeric caracters
+
+  # Multi dB ?
+  MultiAZDatabase:
+    Default: 'false'
+    Description: Create a Multi-AZ MySQL Amazon RDS database instance
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  # DB allocated storage
+  DBAllocatedStorage:
+    Default: '5'
+    Description: The size of the database (Gb)
+    Type: Number
+    MinValue: '5'
+    MaxValue: '1024'
+    ConstraintDescription: must be between 5 and 1024Gb.
+
+  SSHLocation:
+    Description: ' The IP address range that can be used to SSH to the EC2 instances'
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
 
 
-# Ressources
-#Resources:
+# Mappings
+Mappings:
+  RegionMap: # the ami to lauch
+    us-east-1:
+      HVM64: ami-04d29b6f966df1537
+    us-east-2:
+      HVM64: ami-09558250a3419e7d0
+    us-west-1:
+      HVM64: ami-08d9a394ac1c2994c      
+    us-west-2:
+      HVM64: ami-0e472933a1395e172 
+
+
+Resources:
+  # African financial S3 bucket
+  AfricanfinancialS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: africanfinancialpublic.tiger.cloudspaceconsulting.com
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  # African financial S3 bucket policy
+  AfricanfinancialBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref AfricanfinancialS3Bucket
+                - /*
+      Bucket: !Ref AfricanfinancialS3Bucket
+
+  # ALB
+  ApplicationLoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: ApplicationLoadBn
+      SecurityGroups: 
+        - !Ref ALBSecurityGroup
+      Subnets: 
+        - !ImportValue TigerProject3ArchitectureStack-PubSubnet1ID
+        - !ImportValue TigerProject3ArchitectureStack-PubSubnet2ID
+  
+  # Load Balancer Security group
+  ALBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable HTTP ingress
+      VpcId: !ImportValue TigerProject3ArchitectureStack-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0    
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0       
+
+  # target group
+  ALBTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckPath: /var/www/html/index.php
+      HealthCheckIntervalSeconds: 10
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      HealthCheckPort: "traffic-port"
+      HealthCheckProtocol: "HTTP"
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId: !ImportValue TigerProject3ArchitectureStack-VPCID
+  
+  # # ALB Listeners
+  # ALBListenerHTTP:
+  #   Type: 'AWS::ElasticLoadBalancingV2::Listener'
+  #   Properties:
+  #     DefaultActions:
+  #       - Type: forward
+  #         TargetGroupArn: !Ref ALBTargetGroup
+  #     LoadBalancerArn: !Ref ApplicationLoadBalancer
+  #     Port: '80'
+  #     Protocol: HTTP
+
+  # ALB Listeners
+  ALBListenerHTTPS:
+   Type: "AWS::ElasticLoadBalancingV2::Listener"
+   Properties:
+    Certificates: 
+      - arn:aws:acm:us-east-1:258972849027:certificate/50b8906c-cb46-4dc3-bb9d-104a3328b22b 
+    DefaultActions:
+      - Type: "forward"
+        TargetGroupArn: !Ref ALBTargetGroup
+    LoadBalancerArn: !Ref ApplicationLoadBalancer
+    Port: 443
+    Protocol: "HTTPS" 
+
+  # ALB Listeners
+  ALBListenerHTTP:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+       - Type: "redirect"
+         RedirectConfig:
+          Protocol: "HTTPS"
+          Port: 443
+          Host: "#{host}"
+          Path: "/#{path}"
+          Query: "#{query}"
+          StatusCode: "HTTP_301"
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: "HTTP"
+
+
+  # Webserver Auto scalling group
+  WebServerGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      VPCZoneIdentifier: 
+        - !ImportValue TigerProject3ArchitectureStack-PubSubnet1ID
+        - !ImportValue TigerProject3ArchitectureStack-PubSubnet2ID
+      LaunchConfigurationName: !Ref LaunchConfig
+      MinSize: '2'
+      MaxSize: '4'
+      DesiredCapacity: '2' 
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+
+  # Launch configuration
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties: 
+      AssociatePublicIpAddress: 'true'
+      #IamInstanceProfile: String
+      ImageId: !FindInMap [RegionMap,  us-east-1, HVM64]
+      #InstanceId: String
+      #InstanceMonitoring: Boolean
+      InstanceType: !Ref AfricnanFinancialInstanceType # link to the instance type param
+      #KernelId: String
+      KeyName: !Ref AfricanFinancialKeyPairName
+      LaunchConfigurationName: LaunchConfign
+      SecurityGroups: 
+        - !Ref WebserverSG
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash
+            - |
+              yum update -y
+            - |
+              yum install httpd -y
+            - |
+              yum install php -y
+            - |
+              yum install php-mysql -y
+            - |
+              amazon-linux-extras install php7.4 -y
+            - |
+              cd /var/www/html
+            - |
+              wget https://wordpress.org/latest.tar.gz
+            - |
+              tar xzf latest.tar.gz
+            - |
+              cp -r wordpress/* /var/www/html/
+            - |
+              rm -rf wordpress latest.tar.gz       
+            - |
+              chmod -R 755 wp-content
+            - |
+              chown -R apache:apache wp-content
+            - |
+              cp -r wp-config-sample.php wp-config.php
+            - sed -i "s/'database_name_here'/'
+            - !Ref AfricanFinancialPublicDBName
+            - |
+              '/g" wp-config.php
+            - sed -i "s/'username_here'/'
+            - !Ref AfricanFinancialPublicDbAdminUser
+            - |
+              '/g" wp-config.php
+            - sed -i "s/'password_here'/'
+            - !Ref AfricanFinancialPublicDbAdminPassword
+            - |
+              '/g" wp-config.php
+            - sed -i "s/'localhost'/'
+            - !GetAtt
+              - AfricanFinancialPublicDBInstance
+              - Endpoint.Address
+            - |
+              '/g" wp-config.php
+            - | 
+              systemctl enable httpd && systemctl start httpd
+            - |
+              chkconfig httpd on
+
+
+  # The security group of the ec2 instance to deploy (http, https, ssh)
+  WebserverSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable HTTP ingress
+      VpcId: !ImportValue TigerProject3ArchitectureStack-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+  
+  # The security group of the db instance to deploy
+  AfricanFinancialWebdBSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable dB access
+      VpcId: !ImportValue TigerProject3ArchitectureStack-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '3306'
+          ToPort: '3306'
+          SourceSecurityGroupId: !Ref WebserverSG
+  
+  # Subnet groups where the DB will be deployed
+  SubnetsGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: group
+      DBSubnetGroupName: SubnetsGroupn
+      SubnetIds: 
+        - !ImportValue TigerProject3ArchitectureStack-PrivSubnet1ID
+        - !ImportValue TigerProject3ArchitectureStack-PrivSubnet2ID
+
+  # Deploying the DB instance
+  AfricanFinancialPublicDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName: !Ref AfricanFinancialPublicDBName
+      Engine: MySQL
+      MultiAZ: !Ref MultiAZDatabase
+      MasterUsername: !Ref AfricanFinancialPublicDbAdminUser
+      MasterUserPassword: !Ref AfricanFinancialPublicDbAdminPassword
+      DBInstanceClass: !Ref AfricanFinancialDbClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      VPCSecurityGroups: 
+          - !Ref AfricanFinancialWebdBSG
+      DBSubnetGroupName: !Ref SubnetsGroup
+
+
+# Private website configuration
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: us-east-1a
+      SubnetId: !ImportValue TigerProject3ArchitectureStack-PrivSubnet1ID
+      ImageId: ami-047a51fa27710816e
+      InstanceType: t2.micro
+      KeyName: !Ref AfricanFinancialKeyPairName
+      SecurityGroupIds: 
+        - !Ref WebServerSecurityGroup
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash
+            - |
+              yum update -y
+            - |
+              yum install httpd -y
+            - |
+              yum install php -y
+            - |
+              yum install php-mysql -y
+            - |
+              amazon-linux-extras install php7.4 -y
+            - |
+              cd /var/www/html
+            - |
+              wget https://wordpress.org/latest.tar.gz
+            - |
+              tar xzf latest.tar.gz
+            - |
+              cp -r wordpress/* /var/www/html/
+            - |
+              rm -rf wordpress latest.tar.gz       
+            - |
+              chmod -R 755 wp-content
+            - |
+              chown -R apache:apache wp-content
+            - |
+              cp -r wp-config-sample.php wp-config.php
+            - sed -i "s/'database_name_here'/'
+            - !Ref DBName
+            - |
+              '/g" wp-config.php
+            - sed -i "s/'username_here'/'
+            - !Ref AfricanFinancialPublicDbAdminUser
+            - |
+              '/g" wp-config.php
+            - sed -i "s/'password_here'/'
+            - !Ref AfricanFinancialPublicDbAdminPassword
+            - |
+              '/g" wp-config.php
+            - sed -i "s/'localhost'/'
+            - !GetAtt
+              - AfricanFinancialPrivateDBInstance
+              - Endpoint.Address
+            - |
+              '/g" wp-config.php
+            - |
+              systemctl enable httpd && systemctl start httpd
+            - |
+              chkconfig httpd on
+      
+  # Private DB instance
+  AfricanFinancialPrivateDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName: !Ref DBName
+      Engine: MySQL
+      MasterUsername: !Ref AfricanFinancialPublicDbAdminUser
+      MasterUserPassword: !Ref AfricanFinancialPublicDbAdminPassword
+      DBInstanceClass: !Ref AfricanFinancialDbClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      VPCSecurityGroups: 
+          - !Ref DBSecurityGroup
+      DBSubnetGroupName: !Ref SubnetsGroup2
+
+  # The security group of the db instance to deploy
+  DBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable dB access
+      VpcId: !ImportValue TigerProject3ArchitectureStack-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '3306'
+          ToPort: '3306'
+          SourceSecurityGroupId: !Ref WebServerSecurityGroup
+
+  # Security group of the webserver to deploy (intranet)
+  WebServerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable HTTP access via port 80 and SSH access
+      VpcId: !ImportValue TigerProject3ArchitectureStack-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation
+
+  # Subnet groups where the DB will be deployed
+  SubnetsGroup2:
+    Type: AWS::RDS::DBSubnetGroupcd
+    Properties: 
+      DBSubnetGroupDescription: group
+      DBSubnetGroupName: SubnetsGroupn2
+      SubnetIds: 
+        - !ImportValue TigerProject3ArchitectureStack-PrivSubnet1ID
+        - !ImportValue TigerProject3ArchitectureStack-PrivSubnet2ID
+
+
+  myDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId : Z01892454U0HIQLIG2W7
+      Name: Africanfinancialprivate.tiger.cloudspaceconsulting.com
+      ResourceRecords:
+      - !GetAtt WebServer.PrivateIp  
+      TTL: '900'
+      Type: A
+
+  myGeolocationDNSRecord:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: Z01892454U0HIQLIG2W7
+      Comment: Zone apex alias targeted to myELB LoadBalancer.
+      RecordSets:
+      - Name: Africanfinancialpublic.tiger.cloudspaceconsulting.com
+        Type: CNAME
+        TTL: '50'
+        SetIdentifier: Front End one
+        GeoLocation: 
+          CountryCode: 'US'
+        ResourceRecords:
+        - !GetAtt ApplicationLoadBalancer.DNSName
+      - Name: Africanfinancialpublic.tiger.cloudspaceconsulting.com
+        Type: CNAME
+        TTL: '50'
+        SetIdentifier: Front End one two
+        GeoLocation: 
+          CountryCode: '*'
+        ResourceRecords: # a changer (use bucket site endpoint)
+        - !GetAtt AfricanfinancialS3Bucket.WebsiteURL
+      
+      
+    
+        
+          
