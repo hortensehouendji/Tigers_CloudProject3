@@ -63,6 +63,7 @@ Resources:
     Type: AWS::IAM::Group
     Properties:
      GroupName: CloudSpaceEngineersGroup
+
   # Cloudspace Engineer user to group association
   TigerUsers: 
     Type: AWS::IAM::UserToGroupAddition
@@ -74,6 +75,7 @@ Resources:
        - !Ref TigerUser3
        - !Ref TigerUser4
        - !Ref TigerUser5
+
   # Cloudspace Engineer user restrictions (policies)
   CloudSpaceEngineersUserPolicies:
     Type: AWS::IAM::Policy
@@ -105,11 +107,13 @@ Resources:
       UserName: ClaudioSecurity
       LoginProfile:
         Password: !Ref 'AfricanFinancialPassword' 
+
   # African Financial Security team group
   AfricanFinancialSecurityGroup:
     Type: AWS::IAM::Group
     Properties:
      GroupName: AfricanFinancialSecurityGroupN
+
   # African Financial Security team users to group association
   AfricanFinancialSecurityUsers: 
     Type: AWS::IAM::UserToGroupAddition
@@ -119,6 +123,7 @@ Resources:
        - !Ref AfricanFinancialSecurityUser1
        - !Ref AfricanFinancialSecurityUser2
        - !Ref AfricanFinancialSecurityUser3
+
   # African Financial Security team restrictions (policies)
   AfricanFinancialSecurityUserPolicies:
     Type: AWS::IAM::Policy
@@ -150,12 +155,14 @@ Resources:
       UserName: ClaudioOperation
       LoginProfile:
         Password: !Ref 'AfricanFinancialPassword' 
-  # African Financial Security team group
+
+  # African Financial Operation team group
   AfricanFinancialOperationGroup:
     Type: AWS::IAM::Group
     Properties:
      GroupName: AfricanFinancialOperationGroupN
-  # African Financial Security team users to group association
+
+  # African Financial Operation team users to group association
   AfricanFinancialOperationUsers: 
     Type: AWS::IAM::UserToGroupAddition
     Properties:
@@ -164,7 +171,8 @@ Resources:
        - !Ref AfricanFinancialOperationUser1
        - !Ref AfricanFinancialOperationUser2
        - !Ref AfricanFinancialOperationUser3
-  # African Financial Security team users restrictions (policies)
+
+  # African Financial Operation team users restrictions (policies)
   AfricanFinancialOperationUserPolicies:
     Type: AWS::IAM::Policy
     Properties:
@@ -198,11 +206,13 @@ Resources:
       UserName: ClaudioN2G
       LoginProfile:
         Password: !Ref 'AfricanFinancialPassword' 
+
   # N2G Auditing team group
   N2GAudingGroup:
     Type: AWS::IAM::Group
     Properties:
      GroupName: N2GAudingGroupN
+     
   # N2G Auditing team users to group association
   N2GAudingUsers: 
     Type: AWS::IAM::UserToGroupAddition
