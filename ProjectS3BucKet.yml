@@ -1,14 +1,14 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Static website hosting with S3 
 Resources:
-  AfricanfinancialS3Bucket:
+  AlainafricanfinancialS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: africanfinancialtiger
+      BucketName: tiger.cloudspaceconsulting.com
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
-  AfricanfinancialBucketPolicy:
+  AlainafricanfinancialBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
       PolicyDocument:
@@ -22,7 +22,14 @@ Resources:
             Resource: !Join 
               - ''
               - - 'arn:aws:s3:::'
-                - !Ref AfricanfinancialS3Bucket
+                - !Ref AlainafricanfinancialS3Bucket
                 - /*
-      Bucket: !Ref AfricanfinancialS3Bucket
-      
+      Bucket: !Ref AlainafricanfinancialS3Bucket
+      LifecycleConfiguration:
+        Rules:
+          -            
+            Status: Enabled
+            Transitions:
+              -
+                StorageClass: GLACIER
+                TransitionInDays: 30
