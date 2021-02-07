@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  S3BucketLogs:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      LifecycleConfiguration:
+        Rules:
+          -
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+            Status: Enabled
+            Transitions:
+              -
+                StorageClass: STANDARD 
+                TransitionInDays: 30
+Resources:
+  S3BucketLogs:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      LifecycleConfiguration:
+        Rules:                
+          -
+             AbortIncompleteMultipartUpload:
+               DaysAfterInitiation: 7
+             Status: Enabled
+             Transitions:
+              -
+                StorageClass: GLACIER
+                TransitionInDays: 30
+Resources:
+  S3BucketLogs:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      LifecycleConfiguration:
+        Rules:                
+          -
+             AbortIncompleteMultipartUpload:
+               DaysAfterInitiation: 7
+             Status: Enabled
+             Transitions:
+              -
+                StorageClass: GLACIER DEEP ARCHIVE
+                TransitionInDays: 30
+     

@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Static website hosting with S3 
+Resources:
+  AlainafricanfinancialS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: paul.cloudspace.com
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+  AlainafricanfinancialBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref AlainafricanfinancialS3Bucket
+                - /*
+      Bucket: !Ref AlainafricanfinancialS3Bucket
+
+Resources: 
+  AlainafricanfinancialS3Bucket:
+    Type: 'AWS::S3::Bucket' 
+    Description: S3 bucket with default encryption           
+    Properties:
+      BucketName: paul.cloudspace.com
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+          - Id: GlacierRule
+            Prefix: glacier
+            Status: Enabled
+            ExpirationInDays: '1825'
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: GLACIER
+
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: KMS-KEY-ARN
+    DeletionPolicy: Delete                 

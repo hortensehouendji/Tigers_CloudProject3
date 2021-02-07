@@ -1,3 +1,44 @@
+<<<<<<< HEAD
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create a VPC and an assumable role for cross account VPC peering.
+Parameters:
+  AWSTemplateFormatVersion: 2010-09-09
+Description: Create a VPC and an assumable role for cross account VPC peering.
+Parameters:
+  Africanfinancialvpcidr:
+    Description: The VPC cidr of African Financial group
+    Type: String
+    Default: 172.16.0.0/16
+  Hortencepeeringvpcidr:
+    Type: String
+    Default: 192.168.0.0/16
+  
+  OtherAWSaccountID:
+    Description: Another aws account id for a peering connection
+    Type: String
+    Default: 899624289050
+  AfricanfinancialAWSaccountID:
+    Description: Africanfinancial aws account id 
+    Type: String
+    Default: 258972849027 
+
+Resources:
+ 
+   # VPC Peering
+  HortenseVPCpeering:
+    Type: 'AWS::EC2::VPCPeeringConnection'
+    Properties: 
+      PeerOwnerId: 899624289050
+      PeerRegion: us-east-1
+      PeerRoleArn:  arn:aws:iam::899624289050:role/testingpeering-peerRole-NEVODCOD6D1K
+      PeerVpcId: vpc-05827b72cfd6f8327 
+      Tags: 
+        - Key : name
+          Value: vpctest
+      VpcId: !ImportValue TigerProject3ArchitectureStack-VPCID
+
+
+=======
 AWSTemplateFormatVersion: 2010-09-09
 Description: Create a VPC and an assumable role for cross account VPC peering.
 Parameters:
@@ -53,4 +94,5 @@ Resources:
       
 
 
+>>>>>>> dfba986577dff2b357d3d57c92efc06661ae472d
    
