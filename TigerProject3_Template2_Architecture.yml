@@ -42,7 +42,7 @@ Parameters:
     Default: 192.168.0.0/16
   
   PeerVPCAccountID:
-    Description: Another aws account id for a peering connection
+    Description: Another aws account id for a peering connection .
     Type: String
     Default: 899624289050
 
