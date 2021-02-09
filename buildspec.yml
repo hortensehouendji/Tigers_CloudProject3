@@ -17,7 +17,7 @@ phases:
     # run-as: Linux-user-name
     commands:
       - echo Entered the prebuild phase  
-      - - yum install httpd -y
+      - yum install httpd -y
     finally:
       - echo END of the prebuild phase
 
