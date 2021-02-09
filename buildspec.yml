@@ -1,0 +1,54 @@
+version: 0.2
+
+# run-as: Linux-user-name
+        
+phases:
+  install:
+    runtime-versions:
+      php: 8
+    commands:
+      - echo Entered the install phase
+      - yum update -y
+      - yum install httpd -y
+    finally:
+      - echo End of the install phase
+
+  pre_build:
+    # run-as: Linux-user-name
+    commands:
+      - echo Entered the prebuild phase  
+    finally:
+      - echo END of the prebuild phase
+
+  build:
+    # run-as: Linux-user-name
+    commands:
+      - echo Entered the build phase
+    finally:
+      - echo end of the build phase
+
+artifacts:
+  files:
+    - '**/*'
+  name: artifact-name
+
+#   discard-paths: no | yes
+#   base-directory: location
+#   secondary-artifacts:
+#     artifactIdentifier:
+#       files:
+#         - location
+#         - location
+#       name: secondary-artifact-name
+#       discard-paths: no | yes
+#       base-directory: location
+#     artifactIdentifier:
+#       files:
+#         - location
+#         - location
+#       discard-paths: no | yes
+#       base-directory: location
+# cache:
+#   paths:
+#     - path
+#     - path
