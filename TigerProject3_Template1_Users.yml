@@ -30,7 +30,7 @@ Resources:
   TigerUser1:
     Type: AWS::IAM::User
     Properties:
-      UserName: Charlotte1
+      UserName: Charlotte11
       LoginProfile:
         Password: !Ref 'CloudspaceEngPassword'
   TigerUser2:
