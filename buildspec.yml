@@ -5,7 +5,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      php: 8
+      php: 7.3
     commands:
       - echo Entered the install phase
       - yum update -y
@@ -17,6 +17,7 @@ phases:
     # run-as: Linux-user-name
     commands:
       - echo Entered the prebuild phase  
+      - - yum install httpd -y
     finally:
       - echo END of the prebuild phase
 
