@@ -51,9 +51,9 @@ Parameters:
     Type: String
     Default: vpc-0dab893be8308fd9f
   
-  PeerRoleArn:
-    Description: The arn of the peer role created in the accepter account
-    Type: String 
+  # PeerRoleArn:
+  #   Description: The arn of the peer role created in the accepter account
+  #   Type: String 
 
 Resources:
   #VPC
@@ -75,6 +75,7 @@ Resources:
         - Key: Name
           Value: AfricanfinancialIGWn
   
+  # Attach the IGW to the VPC
   AfricanfinancialIGWattachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:

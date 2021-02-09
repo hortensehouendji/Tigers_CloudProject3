@@ -201,7 +201,7 @@ Resources:
     Port: 443
     Protocol: "HTTPS" 
 
-  # ALB Listeners
+  # HTTP Listeners with redirect to HTTPS
   ALBListenerHTTP:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
@@ -219,7 +219,7 @@ Resources:
       Protocol: "HTTP"
 
 
-  # Webserver Auto scalling group
+  # Webserver Auto scalling group with cloudwatch monitoring
   WebServerGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
@@ -232,6 +232,14 @@ Resources:
       DesiredCapacity: '2' 
       TargetGroupARNs:
         - !Ref ALBTargetGroup
+      NotificationConfigurations:
+      - TopicARN: !Ref MySNSTopic
+        NotificationTypes:
+        - autoscaling:EC2_INSTANCE_LAUNCH
+        - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
+        - autoscaling:EC2_INSTANCE_TERMINATE
+        - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
+        - autoscaling:TEST_NOTIFICATION
 
   # Launch configuration
   LaunchConfig:
@@ -302,7 +310,6 @@ Resources:
             - |
               chkconfig httpd on
 
-
   # The security group of the ec2 instance to deploy (http, https, ssh)
   WebserverSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -359,7 +366,6 @@ Resources:
       VPCSecurityGroups: 
           - !Ref AfricanFinancialWebdBSG
       DBSubnetGroupName: !Ref SubnetsGroup
-
 
 # Private website configuration
   WebServer:
@@ -470,7 +476,7 @@ Resources:
 
   # Subnet groups where the DB will be deployed
   SubnetsGroup2:
-    Type: AWS::RDS::DBSubnetGroupcd
+    Type: AWS::RDS::DBSubnetGroup
     Properties: 
       DBSubnetGroupDescription: group
       DBSubnetGroupName: SubnetsGroupn2
@@ -478,7 +484,7 @@ Resources:
         - !ImportValue TigerProject3ArchitectureStack-PrivSubnet1ID
         - !ImportValue TigerProject3ArchitectureStack-PrivSubnet2ID
 
-
+  # DNS record for the private website
   myDNSRecord:
     Type: AWS::Route53::RecordSet
     Properties:
@@ -486,9 +492,10 @@ Resources:
       Name: Africanfinancialprivate.tiger.cloudspaceconsulting.com
       ResourceRecords:
       - !GetAtt WebServer.PrivateIp  
-      TTL: '900'
+      TTL: '50'
       Type: A
 
+  # Geolocation dns record for the public website
   myGeolocationDNSRecord:
     Type: AWS::Route53::RecordSetGroup
     Properties:
@@ -497,22 +504,110 @@ Resources:
       RecordSets:
       - Name: Africanfinancialpublic.tiger.cloudspaceconsulting.com
         Type: CNAME
-        TTL: '50'
+        TTL: '500'
         SetIdentifier: Front End one
         GeoLocation: 
-          CountryCode: 'US'
+          CountryCode: '*' 
+          # CountryCode: 'US'
         ResourceRecords:
         - !GetAtt ApplicationLoadBalancer.DNSName
-      - Name: Africanfinancialpublic.tiger.cloudspaceconsulting.com
-        Type: CNAME
-        TTL: '50'
-        SetIdentifier: Front End one two
-        GeoLocation: 
-          CountryCode: '*'
-        ResourceRecords: # a changer (use bucket site endpoint)
-        - !GetAtt AfricanfinancialS3Bucket.WebsiteURL
-      
-      
+      # - Name: Africanfinancialpublic.tiger.cloudspaceconsulting.com
+      #   Type: CNAME
+      #   TTL: '50'
+      #   SetIdentifier: Front End two
+      #   GeoLocation: 
+      #     CountryCode: '*'
+      #   ResourceRecords: # a changer (use bucket site endpoint)
+      #   - !GetAtt AfricanfinancialS3Bucket.WebsiteURL
+
+  # SNS Topic   
+  MySNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Endpoint: "ncharlotte8@gmail.com"
+        Protocol: email
+      TopicName: "snsTopicForAutoScaling"
+
+  #Scale Out Policy
+  myScaleOutPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref WebServerGroup
+      ScalingAdjustment: '1'
+
+  # Alarm for CPU utilisation higher that 70%
+  CPUAlarmHigh:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Average
+      Threshold: '70'
+      AlarmDescription: Alarm if CPU too high or metric disappears indicating instance
+        is down
+      Period: '60'
+      AlarmActions:
+      - !Ref MySNSTopic
+      - !Ref myScaleOutPolicy
+      Namespace: AWS/EC2
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value:
+          Ref: WebServerGroup
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUUtilization
+
+  # Scale in Policy
+  myScaleInPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref WebServerGroup
+      ScalingAdjustment: '-1'
+
+  # Alarm for CPU utilisation lower that 30%
+  CPUAlarmLow:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Average
+      Threshold: '30'
+      AlarmDescription: Alarm if CPU low or metric disappears indicating instance
+        is down
+      Period: '60'
+      AlarmActions:
+      - !Ref MySNSTopic
+      - !Ref myScaleInPolicy
+      Namespace: AWS/EC2
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value:
+          Ref: WebServerGroup
+      ComparisonOperator: LessThanThreshold
+      MetricName: CPUUtilization
     
+  # S3 bucket for clients 
+  AfricanfinancialClientsS3Bucket:
+    Type: 'AWS::S3::Bucket' 
+    Description: S3 bucket with default encryption           
+    Properties:
+      BucketName: clientsdatabucket
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+          - Id: GlacierRule
+            Prefix: glacier
+            Status: Enabled
+            ExpirationInDays: '1825'
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: GLACIER
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: KMS-KEY-ARN
+    DeletionPolicy: Delete 
         
           
