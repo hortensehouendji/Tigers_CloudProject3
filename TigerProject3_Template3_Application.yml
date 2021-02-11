@@ -609,5 +609,19 @@ Resources:
               SSEAlgorithm: 'aws:kms'
               KMSMasterKeyID: KMS-KEY-ARN
     DeletionPolicy: Delete 
+
+
+# # Outputs
+# Outputs:
+#   # Public website url
+#   PublicWebsiteURL:
+#     Value: !Join 
+#       - ''
+#       - - 'http://'
+#         - !GetAtt 
+#           - ApplicationLoadBalancer
+#           - DNSName
+#         - /wordpress
+#     Description: WordPress Website
         
           
