@@ -175,6 +175,8 @@ Resources:
       Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200-499'
       VpcId: !ImportValue TigerProject3ArchitectureStack-VPCID
   
   # # ALB Listeners
@@ -241,6 +243,7 @@ Resources:
         - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
         - autoscaling:TEST_NOTIFICATION
 
+  ########
   # Role 
   RootRole:
     Type: 'AWS::IAM::Role'
@@ -270,20 +273,21 @@ Resources:
       Roles:
         - !Ref RootRole
 
+  #######
 
   # Launch configuration
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties: 
       AssociatePublicIpAddress: 'true'
-      #IamInstanceProfile: String
+      IamInstanceProfile: !Ref RootInstanceProfile
       ImageId: !FindInMap [RegionMap,  us-east-1, HVM64]
       #InstanceId: String
       #InstanceMonitoring: Boolean
       InstanceType: !Ref AfricnanFinancialInstanceType # link to the instance type param
       #KernelId: String
       KeyName: !Ref AfricanFinancialKeyPairName
-      LaunchConfigurationName: LaunchConfign
+      LaunchConfigurationName: LaunchConfig
       SecurityGroups: 
         - !Ref WebserverSG
       UserData: !Base64 
@@ -530,25 +534,25 @@ Resources:
     Type: AWS::Route53::RecordSetGroup
     Properties:
       HostedZoneId: Z01892454U0HIQLIG2W7
-      Comment: Zone apex alias targeted to myELB LoadBalancer.
+      Comment: Zone apex alias targeted to myELB LoadBalancer
       RecordSets:
       - Name: Africanfinancialpublic.tiger.cloudspaceconsulting.com
         Type: CNAME
-        TTL: '500'
+        TTL: '50'
         SetIdentifier: Front End one
         GeoLocation: 
-          CountryCode: '*' 
-          # CountryCode: 'US'
+          # CountryCode: '*' 
+          CountryCode: 'US'
         ResourceRecords:
         - !GetAtt ApplicationLoadBalancer.DNSName
-      # - Name: Africanfinancialpublic.tiger.cloudspaceconsulting.com
-      #   Type: CNAME
-      #   TTL: '50'
-      #   SetIdentifier: Front End two
-      #   GeoLocation: 
-      #     CountryCode: '*'
-      #   ResourceRecords: # a changer (use bucket site endpoint)
-      #   - !GetAtt AfricanfinancialS3Bucket.WebsiteURL
+      - Name: Africanfinancialpublic.tiger.cloudspaceconsulting.com
+        Type: CNAME
+        TTL: '50'
+        SetIdentifier: Front End two
+        GeoLocation: 
+          CountryCode: '*'
+        ResourceRecords: # a changer (use bucket site endpoint)
+        - !GetAtt AfricanfinancialS3Bucket.WebsiteURL
 
   # SNS Topic   
   MySNSTopic:
