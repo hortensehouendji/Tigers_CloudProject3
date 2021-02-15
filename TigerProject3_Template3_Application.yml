@@ -585,9 +585,12 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
+      TopicName: "snsTopicForAutoScaling"
       - Endpoint: "ncharlotte8@gmail.com"
         Protocol: email
-      TopicName: "snsTopicForAutoScaling"
+      - Endpoint: "training@cloudspaceconsulting.com"
+        Protocol: email
+      
 
   #Scale Out Policy
   myScaleOutPolicy:
