@@ -51,9 +51,9 @@ Parameters:
     Type: String
     Default: vpc-0dab893be8308fd9f
   
-  # PeerRoleArn:
-  #   Description: The arn of the peer role created in the accepter account
-  #   Type: String 
+  PeerRoleArn:
+    Description: The arn of the peer role created in the accepter account
+    Type: String 
 
 Resources:
   #VPC
@@ -195,14 +195,14 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref AfricanfinancialNatGW
 
-  # # Private Route table with peering connection association 
-  # AfricanfinancialPrivateRoutePeering:
-  #   Type: AWS::EC2::Route
-  #   DependsOn: AfricanfinancialNatGW
-  #   Properties:
-  #     RouteTableId: !Ref AfricanfinancialPrivateRT
-  #     DestinationCidrBlock: !Ref PeerVPCAccountCidr
-  #     VpcPeeringConnectionId: !Ref vpcPeeringConnection
+  # Private Route table with peering connection association 
+  AfricanfinancialPrivateRoutePeering:
+    Type: AWS::EC2::Route
+    DependsOn: AfricanfinancialNatGW
+    Properties:
+      RouteTableId: !Ref AfricanfinancialPrivateRT
+      DestinationCidrBlock: !Ref PeerVPCAccountCidr
+      VpcPeeringConnectionId: !Ref vpcPeeringConnection
 
   # Public subnet 1 route table association
   AfricanfinancialPublicSubnet1RTAssociation:
@@ -232,18 +232,18 @@ Resources:
       SubnetId: !Ref AfricanfinancialPrivateSubnet2
       RouteTableId: !Ref AfricanfinancialPrivateRT
 
-  # # VPC peering connection 
-  # vpcPeeringConnection:
-  #   Type: 'AWS::EC2::VPCPeeringConnection'
-  #   Properties: 
-  #     VpcId: !Ref AfricanfinancialVPC
-  #     PeerOwnerId: !Ref PeerVPCAccountID
-  #     PeerRegion: us-east-1
-  #     PeerRoleArn:  !Ref PeerRoleArn
-  #     PeerVpcId: !Ref PeerVPCId
-  #     Tags: 
-  #       - Key : name
-  #         Value: AfricanFinancialVpcPeeringConnetion
+  # VPC peering connection 
+  vpcPeeringConnection:
+    Type: 'AWS::EC2::VPCPeeringConnection'
+    Properties: 
+      VpcId: !Ref AfricanfinancialVPC
+      PeerOwnerId: !Ref PeerVPCAccountID
+      PeerRegion: us-east-1
+      PeerRoleArn:  !Ref PeerRoleArn
+      PeerVpcId: !Ref PeerVPCId
+      Tags: 
+        - Key : name
+          Value: AfricanFinancialVpcPeeringConnetion
 
 
 Outputs:
@@ -252,6 +252,7 @@ Outputs:
     Value: !Ref AfricanfinancialVPC
     Export:
       Name: !Sub '${AWS::StackName}-VPCID'
+
   AfricanfinancialPublicSubnet1ID:
     Description: The subnet ID to use for public web servers
     Value: !Ref AfricanfinancialPublicSubnet1

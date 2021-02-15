@@ -179,46 +179,47 @@ Resources:
       PolicyName: AfricanFinancialOperationUserPolicy
       PolicyDocument:
         Statement:
-        - Effect: Deny
+        - Effect: Allow
           Action: ['*']
           Resource: '*'
           Condition:
-            StringNotEquals:
+            StringEquals:
+            # StringNotEquals:
               aws:RequestedRegion: us-east-1
       Groups: [!Ref 'AfricanFinancialOperationGroup']                                        
 
-  # N2G Auditing team users
-  N2GAudingUser1:
-    Type: AWS::IAM::User
-    Properties:
-      UserName: IdrissN2G
-      LoginProfile:
-        Password: !Ref 'AfricanFinancialPassword'
-  N2GAudingUser2:      
-    Type: AWS::IAM::User
-    Properties:
-      UserName: NarcisseN2G
-      LoginProfile:
-        Password: !Ref 'AfricanFinancialPassword'
-  N2GAudingUser3:        
-    Type: AWS::IAM::User
-    Properties:
-      UserName: ClaudioN2G
-      LoginProfile:
-        Password: !Ref 'AfricanFinancialPassword' 
+  # # N2G Auditing team users
+  # N2GAudingUser1:
+  #   Type: AWS::IAM::User
+  #   Properties:
+  #     UserName: IdrissN2G
+  #     LoginProfile:
+  #       Password: !Ref 'AfricanFinancialPassword'
+  # N2GAudingUser2:      
+  #   Type: AWS::IAM::User
+  #   Properties:
+  #     UserName: NarcisseN2G
+  #     LoginProfile:
+  #       Password: !Ref 'AfricanFinancialPassword'
+  # N2GAudingUser3:        
+  #   Type: AWS::IAM::User
+  #   Properties:
+  #     UserName: ClaudioN2G
+  #     LoginProfile:
+  #       Password: !Ref 'AfricanFinancialPassword' 
 
-  # N2G Auditing team group
-  N2GAudingGroup:
-    Type: AWS::IAM::Group
-    Properties:
-     GroupName: N2GAudingGroupN
+  # # N2G Auditing team group
+  # N2GAudingGroup:
+  #   Type: AWS::IAM::Group
+  #   Properties:
+  #    GroupName: N2GAudingGroupN
      
-  # N2G Auditing team users to group association
-  N2GAudingUsers: 
-    Type: AWS::IAM::UserToGroupAddition
-    Properties:
-      GroupName: !Ref 'N2GAudingGroup'
-      Users:
-       - !Ref N2GAudingUser1
-       - !Ref N2GAudingUser2
-       - !Ref N2GAudingUser3
+  # # N2G Auditing team users to group association
+  # N2GAudingUsers: 
+  #   Type: AWS::IAM::UserToGroupAddition
+  #   Properties:
+  #     GroupName: !Ref 'N2GAudingGroup'
+  #     Users:
+  #      - !Ref N2GAudingUser1
+  #      - !Ref N2GAudingUser2
+  #      - !Ref N2GAudingUser3
