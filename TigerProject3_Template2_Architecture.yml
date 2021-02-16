@@ -49,7 +49,7 @@ Parameters:
     Default: 542148333816
 
   PeerVPCId:
-    Description: The vpc id of the peer account
+    Description: The vpc id of the peer accounts 
     Type: String
     # Default: vpc-0dab893be8308fd9f  # Hortense vpc id
     Default: vpc-69d3d913
