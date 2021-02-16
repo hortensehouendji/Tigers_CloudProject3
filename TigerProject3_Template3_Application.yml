@@ -379,7 +379,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: '22'
           ToPort: '22'
-          CidrIp: 108.15.31.78/32 #charlotte       
+          CidrIp: 173.67.27.206/32 #charlotte       
   
   # The security group of the db instance to deploy
   AfricanFinancialWebdBSG:
@@ -528,10 +528,10 @@ Resources:
           FromPort: '22'
           ToPort: '22'
           CidrIp: 172.16.0.0/16
-        # - IpProtocol: tcp
-        #   FromPort: '22'
-        #   ToPort: '22'
-        #   CidrIp: !Ref PeerVPCAccountCidr
+        - IpProtocol: icmp
+          FromPort: '-1'
+          ToPort: '-1'
+          CidrIp: 172.16.0.0/16
 
   # Subnet groups where the DB will be deployed
   SubnetsGroup2:
@@ -584,13 +584,12 @@ Resources:
   MySNSTopic:
     Type: AWS::SNS::Topic
     Properties:
-      Subscription:
-      TopicName: "snsTopicForAutoScaling"
+      Subscription: 
       - Endpoint: "ncharlotte8@gmail.com"
         Protocol: email
       - Endpoint: "training@cloudspaceconsulting.com"
         Protocol: email
-      
+      TopicName: "snsTopicForAutoScaling"
 
   #Scale Out Policy
   myScaleOutPolicy:
@@ -607,7 +606,7 @@ Resources:
       EvaluationPeriods: '1'
       Statistic: Average
       Threshold: '70'
-      AlarmDescription: Alarm if CPU too high or metric disappears indicating instance
+      AlarmDescription: Alarm if CPU too high or metric disappears indicating instances
         is down
       Period: '60'
       AlarmActions:

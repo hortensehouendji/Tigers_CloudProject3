@@ -32,7 +32,7 @@ Parameters:
     Default: 172.16.3.0/24
 
   RequesterVPCAccountID:
-    Description: Africanfinancial aws account id 
+    Description: Africanfinancial aws account ids 
     Type: String
     Default: 258972849027 
 
