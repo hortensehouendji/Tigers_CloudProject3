@@ -95,7 +95,8 @@ Parameters:
   PeerVPCAccountCidr:
     Description: The VPC cidr of the peer account
     Type: String
-    Default: 192.168.0.0/16
+    # Default: 192.168.0.0/16 # Hortense vpc cidr
+    Default: 172.31.0.0/16
 
 
 # Mappings
@@ -532,6 +533,10 @@ Resources:
           FromPort: '-1'
           ToPort: '-1'
           CidrIp: 172.16.0.0/16
+        - IpProtocol: icmp
+          FromPort: '-1'
+          ToPort: '-1'
+          CidrIp: !Ref PeerVPCAccountCidr
 
   # Subnet groups where the DB will be deployed
   SubnetsGroup2:

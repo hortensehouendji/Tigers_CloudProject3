@@ -10,7 +10,7 @@ Parameters:
   CloudspaceEngPassword:
     NoEcho: 'true'
     Type: String
-    Description: New account password
+    Description: New account passwords
     MinLength: '1'
     MaxLength: '20'
     ConstraintDescription: the password must be between 1 and 20 characters
