@@ -51,8 +51,7 @@ Parameters:
   PeerVPCId:
     Description: The vpc id of the peer accounts 
     Type: String
-    # Default: vpc-0dab893be8308fd9f  # Hortense vpc id
-    #Default: 
+    # Default: 
   
   PeerRoleArn:
     Description: The arn of the peer role created in the accepter account
