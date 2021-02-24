@@ -34,7 +34,7 @@ Parameters:
   RequesterVPCAccountID:
     Description: Africanfinancial aws account id 
     Type: String
-    Default: 258972849027 
+    #Default:  
 
   PeerVPCAccountCidr:
     Description: The VPC cidr of the peer account
@@ -45,20 +45,19 @@ Parameters:
   PeerVPCAccountID:
     Description: Another aws account id for a peering connection .
     Type: String
-    # Default: 899624289050  # Hortense account
-    Default: 542148333816
+    # Default:   # Hortense account
+    #Default: 
 
   PeerVPCId:
     Description: The vpc id of the peer accounts 
     Type: String
     # Default: vpc-0dab893be8308fd9f  # Hortense vpc id
-    Default: vpc-69d3d913
+    #Default: 
   
   PeerRoleArn:
     Description: The arn of the peer role created in the accepter account
     Type: String
-    Default: arn:aws:iam::542148333816:role/Tiger-peering-role-peerRole-13QJB4N2GSMDH
-    #  { "PeerRoleArn": "arn:aws:iam::899624289050:role/test-peerRole-Y12F29OKI1SH"}  ## Hortense Role 
+    #Default: 
 
 Resources:
   #VPC

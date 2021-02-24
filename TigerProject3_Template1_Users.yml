@@ -84,7 +84,7 @@ Resources:
       PolicyDocument:
         Statement:
         - Effect: Deny
-          Action: ['aws-portal:*']
+          Action: ['aws-portal:ViewBilling*']
           Resource: '*'
       Groups: [!Ref 'CloudSpaceEngineersTigerGroup'] 
 
